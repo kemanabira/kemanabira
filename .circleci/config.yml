@@ -1,18 +1,28 @@
 version: 2.1
 
-orbs:
-  node: circleci/node@4.1
-  # The Node.js orb contains a set of prepackaged CircleCI configuration you can utilize
-  # See the orb's test job here: https://circleci.com/developer/orbs/orb/circleci/node#jobs-test
+jobs:
+  test:
+    docker:
+      - image: cimg/node:15.1
+    steps:
+      - checkout
+      - restore_cache:
+          # See the configuration reference documentation for more details on using restore_cache and save_cache steps
+          # https://circleci.com/docs/2.0/configuration-reference/?section=reference#save_cache
+          keys:
+            - node-deps-v1-{{ .Branch }}-{{checksum "package-lock.json"}}
+      - run:
+          name: install packages
+          command: npm ci
+      - save_cache:
+          key: node-deps-v1-{{ .Branch }}-{{checksum "package-lock.json"}}
+          paths:
+            - ~/.npm
+      - run:
+          name: Run Tests
+          command: npm run test
 
 workflows:
-  sample:
+  orb-free-workflow:
     jobs:
-      - node/test:
-          matrix:
-            parameters:
-              version: ['15.1', 'lts', '12.21']
-          # For more information about matrix testing see the detailed blog post:
-          # https://circleci.com/blog/circleci-matrix-jobs/
-          # or the configuration reference:
-          # https://circleci.com/docs/2.0/configuration-reference/?section=reference#matrix-requires-version-21
+      - test
